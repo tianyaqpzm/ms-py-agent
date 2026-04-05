@@ -20,3 +20,4 @@ langchain-postgres
 sentence-transformers
 langchain-huggingface
 rank_bm25
+langchain_community

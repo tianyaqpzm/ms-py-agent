@@ -1,6 +1,10 @@
 import os
 
+from dotenv import load_dotenv
 from functools import lru_cache
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 class Config:
