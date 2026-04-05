@@ -47,3 +47,37 @@ class LLMFactory:
 
         else:
             raise ValueError(f"Unsupported LLM provider: {provider}")
+
+    @staticmethod
+    def get_embeddings(
+        provider: str,
+        model_name: str,
+        base_url: str = None,
+        api_key: str = "dummy",
+    ):
+        """
+        Factory to create Embeddings instances based on provider.
+        """
+        if provider.lower() in ["new-api", "openai", "gemini"]:
+            # Unify all remote API models (including Gemini, OpenAI, etc.) 
+            # through 'new-api' using the standard OpenAI compatible interface.
+            from langchain_openai import OpenAIEmbeddings
+            kwargs = {}
+            if base_url:
+                kwargs["base_url"] = base_url
+            
+            return OpenAIEmbeddings(
+                model=model_name,
+                api_key=api_key,
+                **kwargs
+            )
+        elif provider.lower() == "huggingface":
+            from langchain_huggingface import HuggingFaceEmbeddings
+            kwargs = {'device': 'cpu'} # Defaults to CPU, can be extended for GPU
+            return HuggingFaceEmbeddings(
+                model_name=model_name,
+                model_kwargs=kwargs,
+                encode_kwargs={'normalize_embeddings': True}
+            )
+        else:
+            raise ValueError(f"Unsupported Embedding provider: {provider}")

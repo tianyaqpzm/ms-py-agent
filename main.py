@@ -3,10 +3,11 @@ from fastapi import FastAPI
 
 from app.core.config import settings
 from app.core.lifecycle import lifespan
-from app.api.routers import chat
+from app.api.routers import chat, kb
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(chat.router, tags=["chat"])
+app.include_router(kb.router, prefix="/rest/kb/v1", tags=["Knowledge Base"])
 
 
 @app.get("/health")

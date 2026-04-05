@@ -42,6 +42,18 @@ class Config:
     LLM_BASE_URL = os.getenv("LLM_BASE_URL", "http://localhost:8281/gemini")
     LLM_MODEL = os.getenv("LLM_MODEL", "gemini-1.5-flash")
 
+    # Knowledge Base Configuration
+    KB_EMBEDDING_PROVIDER = os.getenv("KB_EMBEDDING_PROVIDER", "huggingface")
+    KB_EMBEDDING_MODEL = os.getenv("KB_EMBEDDING_MODEL", "BAAI/bge-small-zh-v1.5")
+    KB_CHUNK_SIZE = int(os.getenv("KB_CHUNK_SIZE", 500))
+    KB_CHUNK_OVERLAP = int(os.getenv("KB_CHUNK_OVERLAP", 50))
+    KB_VECTOR_TABLE = os.getenv("KB_VECTOR_TABLE", "langchain_pg_embedding")
+    
+    # KB Generation LLM Configuration (Re-using some from default LLM but allowing split)
+    KB_LLM_PROVIDER = os.getenv("KB_LLM_PROVIDER", LLM_PROVIDER)
+    KB_LLM_MODEL = os.getenv("KB_LLM_MODEL", LLM_MODEL)
+    KB_LLM_TEMPERATURE = float(os.getenv("KB_LLM_TEMPERATURE", 0.7))
+
 
 class DevelopmentConfig(Config):
     """Development configuration."""

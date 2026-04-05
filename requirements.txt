@@ -14,3 +14,9 @@ python-dotenv
 gradio
 langchain-google-genai
 langchain-openai
+python-multipart
+pdfminer.six
+langchain-postgres
+sentence-transformers
+langchain-huggingface
+rank_bm25
