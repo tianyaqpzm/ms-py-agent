@@ -20,13 +20,14 @@ class BaseDocumentProcessor(ABC):
     文档处理器的抽象基类，使用**模板方法模式** (Template Method Pattern)。
     定义了文档核心入库的数据流清洗、转换骨架。
     """
-    def __init__(self, chunk_size: int, chunk_overlap: int):
+    def __init__(self, chunk_size: int, chunk_overlap: int, separators: List[str] = None):
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
+        default_separators = ["\n\n", "\n", "。", "！", "？", ".", "!", "?", " ", ""]
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=self.chunk_size,
             chunk_overlap=self.chunk_overlap,
-            separators=["\n\n", "\n", "。", "！", "？", ".", "!", "?", " ", ""]
+            separators=separators if separators else default_separators
         )
 
     def process(self, file_path: str, base_metadata: dict) -> List[Document]:
@@ -183,9 +184,15 @@ class DataPreparationService:
         }
 
         # 路由策略
-        if category.lower() in ["howtocook", "recipe"]:
-            processor = HowToCookDocumentProcessor(self.chunk_size, self.chunk_overlap)
-        else:
-            processor = DefaultDocumentProcessor(self.chunk_size, self.chunk_overlap)
+        d_chunk_size = extra_metadata.get("chunk_size") if extra_metadata and extra_metadata.get("chunk_size") else self.chunk_size
+        d_chunk_overlap = extra_metadata.get("chunk_overlap") if extra_metadata and extra_metadata.get("chunk_overlap") is not None else self.chunk_overlap
+        d_separators = extra_metadata.get("separators") if extra_metadata and extra_metadata.get("separators") else None
 
-        return processor.process(file_path, base_metadata)
+        if category.lower() in ["howtocook", "recipe"]:
+            processor = HowToCookDocumentProcessor(d_chunk_size, d_chunk_overlap, d_separators)
+        else:
+            processor = DefaultDocumentProcessor(d_chunk_size, d_chunk_overlap, d_separators)
+
+        # 过滤掉特殊的控制字段，避免他们污染普通 metadata
+        clean_metadata = {k: v for k, v in base_metadata.items() if k not in ["chunk_size", "chunk_overlap", "separators"]}
+        return processor.process(file_path, clean_metadata)

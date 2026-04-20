@@ -12,9 +12,12 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+from typing import Optional
+
 class ChatRequest(BaseModel):
     session_id: str
     message: str
+    topic_id: Optional[str] = None
 
 
 logger = logging.getLogger(__name__)
@@ -39,7 +42,7 @@ async def chat_endpoint(request: Request, body: ChatRequest):
                 graph = await get_graph_runnable(conn)
 
                 input_message = HumanMessage(content=body.message)
-                config = {"configurable": {"thread_id": body.session_id}}
+                config = {"configurable": {"thread_id": body.session_id, "topic_id": body.topic_id}}
                 final_response = ""
 
                 # 5. 运行 Graph (使用当前的 conn)

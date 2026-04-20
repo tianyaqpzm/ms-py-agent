@@ -34,6 +34,11 @@ class IngestRequest(BaseModel):
     file_path: str = Field(..., description="物理/挂载磁盘下的绝对路径文件")
     category: str = Field(..., description="分类/类别标签,如 'policy', 'recipe'.")
     tenant_id: str = Field(default="default", description="环境/租户隔离.")
+    
+    # --- 动态传入的 RAG 核心参数 ---
+    chunk_size: Optional[int] = Field(default=None, description="文本分块大小")
+    chunk_overlap: Optional[int] = Field(default=None, description="片段重叠字符数")
+    separators: Optional[List[str]] = Field(default=None, description="文本切割偏好符号")
 
 class RetrievalRequest(BaseModel):
     query: str = Field(..., description="要查询的问题或关键词")
@@ -69,7 +74,12 @@ async def ingest_document(
     try:
         # 1. 解析和分块
         try:
-            chunks = prep_svc.load_and_split(req.file_path, category=req.category, tenant_id=req.tenant_id)
+            extra_configs = {
+                "chunk_size": req.chunk_size,
+                "chunk_overlap": req.chunk_overlap,
+                "separators": req.separators
+            }
+            chunks = prep_svc.load_and_split(req.file_path, category=req.category, tenant_id=req.tenant_id, extra_metadata=extra_configs)
         except RuntimeError as e:
             raise HTTPException(status_code=500, detail=f"文件拆解错误: {e}")
             
