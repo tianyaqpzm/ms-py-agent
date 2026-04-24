@@ -19,6 +19,7 @@ class Config:
     # Nacos
     NACOS_SERVER_ADDR = os.getenv("NACOS_SERVER_ADDR", "127.0.0.1:8848")
     NACOS_NAMESPACE = os.getenv("NACOS_NAMESPACE", "public")
+    NACOS_GROUP = os.getenv("NACOS_GROUP", "DEFAULT_GROUP")
     NACOS_USERNAME = os.getenv("NACOS_USERNAME", "")
     NACOS_PASSWORD = os.getenv("NACOS_PASSWORD", "")
     SERVICE_NAME = os.getenv("SERVICE_NAME", "python-agent")

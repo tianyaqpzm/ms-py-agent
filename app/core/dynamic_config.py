@@ -16,8 +16,8 @@ class DynamicConfig:
 
         # Nacos Config Info: Adopt Option 1 (Dynamic Data ID based on environment)
         # e.g., python-agent-development.yaml or python-agent-production.yaml
-        self.data_id = f"{settings.SERVICE_NAME}-{settings.APP_ENV}.yaml"
-        self.group = "DEFAULT_GROUP"
+        self.data_id = f"{settings.SERVICE_NAME}-{settings.APP_ENV}.txt"
+        self.group = settings.NACOS_GROUP
 
     def watch_config(self):
         """Start watching for configuration changes."""
@@ -45,20 +45,22 @@ class DynamicConfig:
                 return
 
             logger.info("🔄 Received config update from Nacos")
-            config = yaml.safe_load(content)
+            from io import StringIO
+            from dotenv import dotenv_values
+
+            # 解析 .env 格式的内容 (KEY=VALUE)
+            config = dotenv_values(stream=StringIO(content))
 
             if config:
-                # Update LLM settings if present
-                if "llm" in config:
-                    llm_config = config["llm"]
-                    self.llm_provider = llm_config.get("provider", self.llm_provider)
-                    self.llm_base_url = llm_config.get("base_url", self.llm_base_url)
-                    self.llm_model = llm_config.get("model", self.llm_model)
-                    self.llm_api_key = llm_config.get("api_key", self.llm_api_key)
+                # 直接从解析出的字典中读取配置 (通常建议与 .env/环境变量名保持一致)
+                self.llm_provider = config.get("LLM_PROVIDER", self.llm_provider)
+                self.llm_base_url = config.get("LLM_BASE_URL", self.llm_base_url)
+                self.llm_model = config.get("LLM_MODEL", self.llm_model)
+                self.llm_api_key = config.get("LLM_API_KEY", self.llm_api_key)
 
-                    logger.info(
-                        f"✅ LLM Config Updated: Provider={self.llm_provider}, Model={self.llm_model}, APIKey={'***' if self.llm_api_key != 'dummy' else 'dummy'}"
-                    )
+                logger.info(
+                    f"✅ LLM Config Updated from .env: Provider={self.llm_provider}, Model={self.llm_model}, APIKey={'***' if self.llm_api_key != 'dummy' else 'dummy'}"
+                )
 
         except Exception as e:
             logger.error(f"❌ Error updating config: {e}")
