@@ -14,8 +14,9 @@ class DynamicConfig:
         self.llm_model = settings.LLM_MODEL
         self.llm_api_key = settings.LLM_API_KEY
 
-        # Nacos Config Info
-        self.data_id = "python-agent.yaml"
+        # Nacos Config Info: Adopt Option 1 (Dynamic Data ID based on environment)
+        # e.g., python-agent-development.yaml or python-agent-production.yaml
+        self.data_id = f"{settings.SERVICE_NAME}-{settings.APP_ENV}.yaml"
         self.group = "DEFAULT_GROUP"
 
     def watch_config(self):
