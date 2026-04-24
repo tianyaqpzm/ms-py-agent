@@ -85,7 +85,6 @@ jobs:
               --name python-agent \
               --restart unless-stopped \
               -p 8181:8181 \
-              --add-host "tao-lan.122577.xyz:host-gateway" \
               -e TZ=Asia/Shanghai \
               -e APP_ENV=production \
               -e NACOS_SERVER_ADDR=${{ secrets.NACOS_SERVER_ADDR }} \
