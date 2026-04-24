@@ -26,9 +26,12 @@ async def agent_node(state: ChatState, config: RunnableConfig):
     provider = dynamic_config.llm_provider
     base_url = dynamic_config.llm_base_url
     model = dynamic_config.llm_model
+    api_key = dynamic_config.llm_api_key
 
     # Initialize LLM on the fly
-    llm = LLMFactory.get_llm(provider=provider, base_url=base_url, model_name=model)
+    llm = LLMFactory.get_llm(
+        provider=provider, base_url=base_url, model_name=model, api_key=api_key
+    )
 
     messages = state["messages"]
 

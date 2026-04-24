@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master  # 主分支提交时触发
+  pull_request:
+    branches:
+      - master  # 向主分支发起PR时触发
 
 jobs:
   build:
@@ -60,7 +63,7 @@ jobs:
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.VPS_USERNAME }} 
-          password: ${{ secrets.VPS_PASSWORD }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.PORT || 22 }}
           script: |
             # 停止并删除旧容器

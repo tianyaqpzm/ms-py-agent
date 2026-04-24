@@ -12,6 +12,7 @@ class DynamicConfig:
         self.llm_provider = settings.LLM_PROVIDER
         self.llm_base_url = settings.LLM_BASE_URL
         self.llm_model = settings.LLM_MODEL
+        self.llm_api_key = settings.LLM_API_KEY
 
         # Nacos Config Info
         self.data_id = "python-agent.yaml"
@@ -52,9 +53,10 @@ class DynamicConfig:
                     self.llm_provider = llm_config.get("provider", self.llm_provider)
                     self.llm_base_url = llm_config.get("base_url", self.llm_base_url)
                     self.llm_model = llm_config.get("model", self.llm_model)
+                    self.llm_api_key = llm_config.get("api_key", self.llm_api_key)
 
                     logger.info(
-                        f"✅ LLM Config Updated: Provider={self.llm_provider}, Model={self.llm_model}"
+                        f"✅ LLM Config Updated: Provider={self.llm_provider}, Model={self.llm_model}, APIKey={'***' if self.llm_api_key != 'dummy' else 'dummy'}"
                     )
 
         except Exception as e:

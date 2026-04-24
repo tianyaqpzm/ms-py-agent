@@ -27,6 +27,12 @@ class Config:
     MCP_BRAVE_PATH = os.getenv("MCP_BRAVE_PATH")  # Optional override
     NACOS_GATEWAY_SERVICE_NAME = os.getenv("NACOS_GATEWAY_SERVICE_NAME", "gateway")
 
+    # Security — must match api-gateway app.jwt.secret
+    # 默认值与 api-gateway application.yml 中保持一致，生产环境通过环境变量注入
+    JWT_SECRET = os.getenv("JWT_SECRET", "your-256-bit-secret-your-256-bit-secret")
+    # 不需要 Token 的路径白名单（与 gateway security.ignore.urls 对齐）
+    JWT_WHITELIST: list[str] = ["/health", "/docs", "/openapi.json", "/redoc"]
+
     # Database
     PG_HOST = os.getenv("PG_HOST", "localhost")
     PG_PORT = int(os.getenv("PG_PORT", 5432))
@@ -39,16 +45,15 @@ class Config:
     )
 
     # LLM Configuration
-    LLM_PROVIDER = os.getenv("LLM_PROVIDER", "gemini")  # gemini, openai
-    # Default Base URL for Gemini via Gateway (assuming Gateway is at localhost:8281)
-    # The Gateway route is /gemini/** -> https://generativelanguage.googleapis.com
-    # So we point the client to http://localhost:8281/gemini
-    LLM_BASE_URL = os.getenv("LLM_BASE_URL", "http://localhost:8281/gemini")
-    LLM_MODEL = os.getenv("LLM_MODEL", "gemini-1.5-flash")
+    LLM_PROVIDER = os.getenv("LLM_PROVIDER", "new-api")
+    LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://pei.122577.xyz:13000/v1")
+    LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.5-flash")
+    LLM_API_KEY = os.getenv("LLM_API_KEY", "dummy")
+    LLM_SKIP_SSL_VERIFY = os.getenv("LLM_SKIP_SSL_VERIFY", "true").lower() == "true"
 
     # Knowledge Base Configuration
-    KB_EMBEDDING_PROVIDER = os.getenv("KB_EMBEDDING_PROVIDER", "huggingface")
-    KB_EMBEDDING_MODEL = os.getenv("KB_EMBEDDING_MODEL", "BAAI/bge-small-zh-v1.5")
+    KB_EMBEDDING_PROVIDER = os.getenv("KB_EMBEDDING_PROVIDER", "new-api")
+    KB_EMBEDDING_MODEL = os.getenv("KB_EMBEDDING_MODEL", "text-embedding-3-small")
     KB_CHUNK_SIZE = int(os.getenv("KB_CHUNK_SIZE", 500))
     KB_CHUNK_OVERLAP = int(os.getenv("KB_CHUNK_OVERLAP", 50))
     KB_VECTOR_TABLE = os.getenv("KB_VECTOR_TABLE", "langchain_pg_embedding")

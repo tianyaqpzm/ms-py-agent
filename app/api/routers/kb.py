@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from app.core.security import CurrentUser, get_current_user
 from app.services.kb.data_prep import DataPreparationService
 from app.services.kb.indexing import IndexingService
 from app.services.kb.retrieval import RetrievalService
@@ -62,7 +63,8 @@ class AskRequest(BaseModel):
 async def ingest_document(
     req: IngestRequest,
     prep_svc: DataPreparationService = Depends(get_data_prep_service),
-    idx_svc: IndexingService = Depends(get_indexing_service)
+    idx_svc: IndexingService = Depends(get_indexing_service),
+    _: CurrentUser = Depends(get_current_user),
 ):
     """
     负责接收存储路径、调用智能提取与向量建立索引落盘 pgvector。
@@ -104,7 +106,8 @@ async def ingest_document(
 @router.post("/retrieve", summary="提问搜索 (向量近似查询) 可单独由Java获取Chunks", response_model=RetrievalResponse)
 async def retrieve_knowledge(
     req: RetrievalRequest,
-    ret_svc: RetrievalService = Depends(get_retrieval_service)
+    ret_svc: RetrievalService = Depends(get_retrieval_service),
+    _: CurrentUser = Depends(get_current_user),
 ):
     """
     获取包含原文本分块(Chunk)以及评分的检索列表。如果Java仍需单独处理查询，可以用这个接口。
@@ -128,7 +131,8 @@ async def retrieve_knowledge(
 async def ask_knowledge(
     req: AskRequest,
     ret_svc: RetrievalService = Depends(get_retrieval_service),
-    gen_svc: GenerationService = Depends(get_generation_service)
+    gen_svc: GenerationService = Depends(get_generation_service),
+    _: CurrentUser = Depends(get_current_user),
 ):
     """
     接收用户提问，先在向量库做过滤查询 (Retrieval)，随后用 LLM 做上下文润色并答复 (Generation)。

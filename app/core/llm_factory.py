@@ -36,13 +36,22 @@ class LLMFactory:
                 convert_system_message_to_human=True,  # Gemini sometimes needs this
             )
 
-        elif provider.lower() == "openai":
-            # For OpenAI (direct or via Gateway)
+        elif provider.lower() in ["openai", "new-api"]:
+            # For OpenAI or New-API (OpenAI-compatible)
+            import httpx
+            from app.core.config import settings
+            
+            http_client = None
+            if settings.LLM_SKIP_SSL_VERIFY:
+                # 针对自签名证书，创建一个不验证 SSL 的 AsyncClient
+                http_client = httpx.AsyncClient(verify=False)
+
             return ChatOpenAI(
                 model=model_name,
                 api_key=api_key,
                 base_url=base_url,
                 temperature=temperature,
+                http_async_client=http_client,
             )
 
         else:
@@ -62,22 +71,23 @@ class LLMFactory:
             # Unify all remote API models (including Gemini, OpenAI, etc.) 
             # through 'new-api' using the standard OpenAI compatible interface.
             from langchain_openai import OpenAIEmbeddings
+            import httpx
+            from app.core.config import settings
+
             kwargs = {}
             if base_url:
                 kwargs["base_url"] = base_url
+            
+            # 针对自签名证书，创建一个不验证 SSL 的 AsyncClient
+            if settings.LLM_SKIP_SSL_VERIFY:
+                kwargs["http_async_client"] = httpx.AsyncClient(verify=False)
             
             return OpenAIEmbeddings(
                 model=model_name,
                 api_key=api_key,
                 **kwargs
             )
-        elif provider.lower() == "huggingface":
-            from langchain_huggingface import HuggingFaceEmbeddings
-            kwargs = {'device': 'cpu'} # Defaults to CPU, can be extended for GPU
-            return HuggingFaceEmbeddings(
-                model_name=model_name,
-                model_kwargs=kwargs,
-                encode_kwargs={'normalize_embeddings': True}
-            )
+        # TODO: 本地 HuggingFace/sentence-transformers Embedding（依赖 torch）已移除，
+        #       如需本地模型，请在此处重新实现并添加相应的依赖。
         else:
             raise ValueError(f"Unsupported Embedding provider: {provider}")
