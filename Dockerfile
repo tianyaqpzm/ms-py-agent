@@ -17,11 +17,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# 复制依赖文件
-COPY requirements.txt .
+# 安装 uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# 复制依赖文件 (使用 uv 相关文件)
+COPY pyproject.toml uv.lock ./
 
 # 安装 Python 依赖
-RUN pip install --no-cache-dir -r requirements.txt
+# 使用 --system 安装到系统环境，因为是在容器内
+RUN uv pip install --system --no-cache -r pyproject.toml
 
 # 复制应用代码
 COPY . .
