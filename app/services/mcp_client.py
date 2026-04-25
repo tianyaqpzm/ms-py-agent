@@ -36,7 +36,7 @@ class SSEMCPClient(MCPClient):
         # Simplified for this task: specific implementation details might vary
         pass
 
-    async def list_tools(self):
+    async def list_tools(self, headers=None):
         # JSON-RPC request to list tools
         payload = {
             "jsonrpc": "2.0",
@@ -45,7 +45,7 @@ class SSEMCPClient(MCPClient):
             "params": {}
         }
         async with httpx.AsyncClient() as client:
-            response = await client.post(self.post_url, json=payload)
+            response = await client.post(self.post_url, json=payload, headers=headers)
             response.raise_for_status()
             result = response.json()
             if 'result' in result:
@@ -53,7 +53,7 @@ class SSEMCPClient(MCPClient):
                 return self.tools
             return []
     
-    async def call_tool(self, tool_name, arguments):
+    async def call_tool(self, tool_name, arguments, headers=None):
         payload = {
             "jsonrpc": "2.0",
             "id": 2,
@@ -63,10 +63,56 @@ class SSEMCPClient(MCPClient):
                 "arguments": arguments
             }
         }
+        # Ensure URL is resolved if this is a Nacos client
+        if hasattr(self, "_resolve_url"):
+            await self._resolve_url()
+
         async with httpx.AsyncClient() as client:
-            response = await client.post(self.post_url, json=payload)
+            response = await client.post(self.post_url, json=payload, headers=headers)
             response.raise_for_status()
             return response.json().get('result', {})
+
+class NacosSSEMCPClient(SSEMCPClient):
+    def __init__(self, name, target_service_name):
+        """
+        MCP Client that discovers service address via Nacos.
+        :param target_service_name: The service name in Nacos (e.g., 'ai-langchain4j')
+        """
+        super().__init__(name, "http://uninitialized")
+        self.target_service_name = target_service_name
+
+    async def _resolve_url(self):
+        """Dynamically resolve service address from Nacos."""
+        from app.core.nacos import nacos_manager
+        try:
+            instances = nacos_manager.get_service(self.target_service_name)
+            if not instances:
+                logger.error(f"❌ No healthy instances found for {self.target_service_name} in Nacos.")
+                return False
+            
+            # Simple strategy: use the first instance
+            instance = instances[0]
+            ip = instance.get('ip')
+            port = instance.get('port')
+            
+            self.base_url = f"http://{ip}:{port}"
+            self.sse_url = f"{self.base_url}/mcp/sse"
+            # 💡 注意：Java 端 McpController 的消息处理路径通常是 /mcp/messages
+            self.post_url = f"{self.base_url}/mcp/messages"
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to resolve {self.target_service_name} from Nacos: {e}")
+            return False
+
+    async def list_tools(self, headers=None):
+        if await self._resolve_url():
+            return await super().list_tools(headers=headers)
+        return []
+
+    async def call_tool(self, tool_name, arguments, headers=None):
+        if await self._resolve_url():
+            return await super().call_tool(tool_name, arguments, headers=headers)
+        return {"error": "Service unavailable"}
 
 class StdioMCPClient(MCPClient):
     def __init__(self, name, command, args):

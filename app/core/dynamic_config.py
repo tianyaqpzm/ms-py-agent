@@ -49,12 +49,19 @@ class DynamicConfig:
                 
                 # 智能匹配逻辑：
                 # 1. 直接匹配 (如 PG_HOST)
-                # 2. 去掉 APP_ 前缀匹配 (如 APP_SERVICE_NAME -> SERVICE_NAME)
+                # 2. 去掉前缀匹配 (如 APP_SERVICE_NAME -> SERVICE_NAME, SERVER_HOST -> HOST)
                 target_key = None
+                prefixes_to_strip = ["APP_", "SERVER_", "NACOS_"]
+                
                 if hasattr(settings, key_upper):
                     target_key = key_upper
-                elif key_upper.startswith("APP_") and hasattr(settings, key_upper[4:]):
-                    target_key = key_upper[4:]
+                else:
+                    for prefix in prefixes_to_strip:
+                        if key_upper.startswith(prefix):
+                            stripped_key = key_upper[len(prefix):]
+                            if hasattr(settings, stripped_key):
+                                target_key = stripped_key
+                                break
 
                 if target_key:
                     self._apply_setting(target_key, value)

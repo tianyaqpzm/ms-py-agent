@@ -44,7 +44,15 @@ async def chat_endpoint(
             graph = await get_graph_runnable(lg_pool)
 
             input_message = HumanMessage(content=body.message)
-            config = {"configurable": {"thread_id": body.session_id, "topic_id": body.topic_id}}
+            # 提取授权头，用于后续透传给 Java MCP 服务
+            auth_header = request.headers.get("Authorization")
+            config = {
+                "configurable": {
+                    "thread_id": body.session_id, 
+                    "topic_id": body.topic_id,
+                    "auth_header": auth_header
+                }
+            }
 
             logger.info(f"Starting graph stream for session={body.session_id}")
 

@@ -3,7 +3,7 @@
 # Group: DEFAULT_GROUP
 # Format: YAML
 
-# 1. 全局应用属性 (对应代码中的 SERVICE_NAME, APP_ENV 等)
+# 1. 全局应用属性
 APP:
   SERVICE_NAME: python-agent
   ENV: development
@@ -13,9 +13,10 @@ SERVER:
   HOST: 0.0.0.0
   PORT: 8181
 
-# 3. Nacos 内部管理 (可选：可以在远程配置中修改日志打印频率)
+# 3. Nacos 内部管理与服务发现
 NACOS:
   GATEWAY_SERVICE_NAME: gateway
+  JAVA_SERVICE_NAME: ai-langchain4j    # 💡 对应 Java 后端(Hands)在 Nacos 注册的名字
   LOG_INTERVAL: 60
 
 # 4. 大语言模型配置 (LLM)

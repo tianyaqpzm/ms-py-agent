@@ -91,11 +91,6 @@ jobs:
               -e NACOS_USERNAME=${{ secrets.NACOS_USERNAME }} \
               -e NACOS_PASSWORD=${{ secrets.NACOS_PASSWORD }} \
               -e NACOS_NAMESPACE=${{ vars.NACOS_NAMESPACE }} \
-              -e PG_HOST=${{ secrets.PG_HOST }} \
-              -e PG_PORT=${{ secrets.PG_PORT }} \
-              -e PG_USER=${{ secrets.PG_USER }} \
-              -e PG_PASSWORD=${{ secrets.PG_PASSWORD }} \
-              -e PG_DB=${{ secrets.PG_DB }} \
               tianyaqpzm/python-agent:${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'master' }}
             
             # 清理无用镜像

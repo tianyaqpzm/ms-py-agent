@@ -25,52 +25,44 @@ async def setup_mcp_clients():
             "未找到 npx 命令，请确保已安装 Node.js 并添加到环境变量中，或在配置中指定路径。"
         )
 
-    # 3. 初始化客户端
+    # 3. 初始化本地 Stdio 客户端 (如 Brave Search)
     brave_client = StdioMCPClient(
         name="brave-search",
-        command=npx_path,  # 传入绝对路径，如 "C:\...\npx.cmd"
+        command=npx_path,
         args=["-y", "@modelcontextprotocol/server-brave-search"],
     )
-    # We register it but connection happens async
-    # await brave_client.connect() # Connect in background
     register_mcp_client(brave_client)
 
-    # 2. SSE Client (Java Service)
-    # Discover via Nacos
-    # In a real app we might poll or wait for service to be available.
-    # Here we'll try once or assume fixed path for testing if not found.
-    # Wait, the java service is running? User said "run time query".
-    pass
+    # 4. 🔥 注册支持 Nacos 动态发现的 Java SSE 客户端
+    from app.services.mcp_client import NacosSSEMCPClient
+    java_client = NacosSSEMCPClient(
+        name="java-service",
+        target_service_name=settings.NACOS_JAVA_SERVICE_NAME
+    )
+    register_mcp_client(java_client)
+    logger.info(f"✅ Registered Nacos-based MCP client for service: {settings.NACOS_JAVA_SERVICE_NAME}")
 
 
 async def connect_clients():
-    # Connect Stdio
-    try:
-        # We need to find the client from registry
-        from app.services.mcp_client import mcp_clients
+    """后台任务：启动已注册客户端的连接或预解析逻辑。"""
+    from app.services.mcp_client import mcp_clients
 
+    # 1. 连接本地 Stdio 客户端
+    try:
         if "brave-search" in mcp_clients:
             await mcp_clients["brave-search"].connect()
+            logger.info("🚀 Brave Search MCP client connected.")
     except Exception as e:
-        logger.error(f"Failed to connect to Brave Search: {e}")
+        logger.error(f"❌ Failed to connect to Brave Search: {e}")
 
-    # Connect SSE
+    # 2. 预解析 Java 服务地址 (确保发现逻辑正常)
     try:
-        # Resolve Java service
-        instances = nacos_manager.get_service(settings.NACOS_GATEWAY_SERVICE_NAME)
-        if instances:
-            # Pick one
-            target = instances[0]
-            ip = target["ip"]
-            port = target["port"]
-            url = f"http://{ip}:{port}"
-            sse_client = SSEMCPClient(name="java-service", base_url=url)
-            # await sse_client.connect()
-            register_mcp_client(sse_client)
-            logger.info(f"Registered SSE client for Java service at {url}")
-        else:
-            logger.warning(
-                f"No {settings.NACOS_GATEWAY_SERVICE_NAME} service found in Nacos"
-            )
+        client = mcp_clients.get("java-service")
+        if client and hasattr(client, "_resolve_url"):
+            success = await client._resolve_url()
+            if success:
+                logger.info(f"🚀 Java service resolved at {client.base_url}")
+            else:
+                logger.warning(f"⚠️ Java service ({settings.NACOS_JAVA_SERVICE_NAME}) not found in Nacos yet.")
     except Exception as e:
-        logger.error(f"Failed to setup SSE client: {e}")
+        logger.error(f"❌ Error during Java service discovery: {e}")
