@@ -21,6 +21,8 @@ class Config:
     NACOS_USERNAME = os.getenv("NACOS_USERNAME", "")
     NACOS_PASSWORD = os.getenv("NACOS_PASSWORD", "")
     SERVICE_NAME = os.getenv("SERVICE_NAME", "python-agent")
+    SERVICE_IP = os.getenv("SERVICE_IP")
+    NACOS_HEARTBEAT_INTERVAL = int(os.getenv("NACOS_HEARTBEAT_INTERVAL", 30))
 
     # MCP / Discovery
     MCP_BRAVE_PATH = os.getenv("MCP_BRAVE_PATH")

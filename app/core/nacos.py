@@ -76,7 +76,7 @@ class NacosManager:
                 self.ip,
                 self.port,
                 cluster_name="DEFAULT",
-                heartbeat_interval=10,
+                heartbeat_interval=settings.NACOS_HEARTBEAT_INTERVAL,
                 ephemeral=True,
             )
             logger.info(
@@ -134,5 +134,6 @@ nacos_manager = NacosManager(
     username=settings.NACOS_USERNAME,
     password=settings.NACOS_PASSWORD,
     service_name=settings.SERVICE_NAME,
+    ip=settings.SERVICE_IP,
     port=settings.PORT,
 )
