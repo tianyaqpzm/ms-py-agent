@@ -85,6 +85,7 @@ jobs:
               --name python-agent \
               --restart unless-stopped \
               -p 8181:8181 \
+              -e SERVICE_IP=temp.122577.xyz \
               -e TZ=Asia/Shanghai \
               -e APP_ENV=production \
               -e SERVICE_NAME=python-agent \
