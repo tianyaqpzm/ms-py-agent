@@ -44,7 +44,7 @@ class SSEMCPClient(MCPClient):
             "method": "tools/list",
             "params": {}
         }
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(self.post_url, json=payload, headers=headers)
             response.raise_for_status()
             result = response.json()
@@ -67,7 +67,7 @@ class SSEMCPClient(MCPClient):
         if hasattr(self, "_resolve_url"):
             await self._resolve_url()
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(self.post_url, json=payload, headers=headers)
             response.raise_for_status()
             return response.json().get('result', {})
@@ -122,6 +122,7 @@ class StdioMCPClient(MCPClient):
         self.process = None
         self._response_futures = {}
         self._lock = asyncio.Lock()
+        self._req_id = 0
 
     async def connect(self):
         full_command = [self.command] + self.args
@@ -140,7 +141,7 @@ class StdioMCPClient(MCPClient):
         
         # Initialize
         await self._send_json_rpc("initialize", {
-            "protocolVersion": "0.1.0",
+            "protocolVersion": "2024-11-05", # Matching latest spec
             "capabilities": {},
             "clientInfo": {"name": "python-agent", "version": "0.1"}
         })
@@ -148,10 +149,10 @@ class StdioMCPClient(MCPClient):
 
     async def _listen_stdout(self):
         while True:
-            line = await self.process.stdout.readline()
-            if not line:
-                break
             try:
+                line = await self.process.stdout.readline()
+                if not line:
+                    break
                 data = json.loads(line)
                 if 'id' in data and data['id'] in self._response_futures:
                     self._response_futures[data['id']].set_result(data)
@@ -159,22 +160,27 @@ class StdioMCPClient(MCPClient):
                 logger.error(f"Error parsing JSON from stdio: {e}")
 
     async def _send_json_rpc(self, method, params=None):
-        req_id = 1 # In real app, increment this
+        async with self._lock:
+            self._req_id += 1
+            current_id = self._req_id
+        
         future = asyncio.Future()
-        self._response_futures[req_id] = future
+        self._response_futures[current_id] = future
         
-        payload = {
-            "jsonrpc": "2.0",
-            "id": req_id,
-            "method": method,
-            "params": params or {}
-        }
-        json_str = json.dumps(payload) + "\n"
-        self.process.stdin.write(json_str.encode())
-        await self.process.stdin.drain()
-        
-        return await future
-
+        try:
+            payload = {
+                "jsonrpc": "2.0",
+                "id": current_id,
+                "method": method,
+                "params": params or {}
+            }
+            json_str = json.dumps(payload) + "\n"
+            self.process.stdin.write(json_str.encode())
+            await self.process.stdin.drain()
+            
+            return await future
+        finally:
+            self._response_futures.pop(current_id, None)
     async def list_tools(self):
         response = await self._send_json_rpc("tools/list")
         if response and 'result' in response:

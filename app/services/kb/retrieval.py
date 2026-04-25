@@ -5,7 +5,7 @@ from langchain_core.documents import Document
 from langchain_postgres import PGVector
 from app.core.config import settings
 from app.core.llm_factory import LLMFactory
-from app.core.database import engine
+from app.core.database import get_engine
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ class DefaultVectorProcessor(BaseRetrievalProcessor):
         self.vector_store = PGVector(
             embeddings=self.embeddings,
             collection_name=self.collection_name,
-            connection=engine,
+            connection=get_engine(),
             use_jsonb=True
         )
 
@@ -107,7 +107,7 @@ class HowToCookRetrievalProcessor(BaseRetrievalProcessor):
         self.vector_store = PGVector(
             embeddings=self.embeddings,
             collection_name=self.collection_name,
-            connection=engine,
+            connection=get_engine(),
             use_jsonb=True
         )
         self.rrf_k = 60  # RRF 的算法惩罚常量因子

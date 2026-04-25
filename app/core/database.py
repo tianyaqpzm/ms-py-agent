@@ -2,22 +2,44 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy import Column, String, Text, DateTime, BigInteger, func
 from app.core.config import settings
+import logging
 
+logger = logging.getLogger(__name__)
 
-engine = create_async_engine(
-    settings.DB_ASYNC_URI,
-    echo=False,
-    max_overflow=10,
-    # 🔥 关键配置：开启预检查，彻底解决 server closed connection 报错
-    pool_pre_ping=True,
-    # 以此配置，SQLAlchemy 会自动处理断开的连接
-    pool_size=20,
-    pool_recycle=3600,
-)
-AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 Base = declarative_base()
 
+# --- 核心变更：改为动态创建 ---
+_engine = None
+_AsyncSessionLocal = None
 
+def get_engine():
+    global _engine
+    if _engine is None:
+        logger.info(f"🏗️ Creating database engine for {settings.PG_HOST}:{settings.PG_PORT}...")
+        _engine = create_async_engine(
+            settings.DB_ASYNC_URI,
+            echo=False,
+            max_overflow=10,
+            pool_pre_ping=True,
+            pool_size=20,
+            pool_recycle=3600,
+        )
+    return _engine
+
+def get_sessionmaker():
+    global _AsyncSessionLocal
+    if _AsyncSessionLocal is None:
+        _AsyncSessionLocal = sessionmaker(get_engine(), class_=AsyncSession, expire_on_commit=False)
+    return _AsyncSessionLocal
+
+def AsyncSessionLocal():
+    """
+    向后兼容函数：可以直接像以前一样作为上下文管理器使用
+    注意：在 async with 后面加括号：async with AsyncSessionLocal()
+    """
+    return get_sessionmaker()()
+
+# --- 模型定义保持不变 ---
 class ChatMessageModel(Base):
     __tablename__ = "chat_messages"
 
@@ -27,12 +49,15 @@ class ChatMessageModel(Base):
     content = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-
+# --- 数据库操作方法 ---
 async def get_db():
-    async with AsyncSessionLocal() as session:
+    session_factory = get_sessionmaker()
+    async with session_factory() as session:
         yield session
 
-
 async def init_db():
+    engine = get_engine()
     async with engine.begin() as conn:
+        logger.info("🛠️ Running database migrations (create_all)...")
         await conn.run_sync(Base.metadata.create_all)
+        logger.info("✅ Database tables initialized successfully.")

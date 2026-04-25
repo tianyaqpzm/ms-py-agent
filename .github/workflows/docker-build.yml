@@ -87,10 +87,12 @@ jobs:
               -p 8181:8181 \
               -e TZ=Asia/Shanghai \
               -e APP_ENV=production \
+              -e SERVICE_NAME=python-agent \
               -e NACOS_SERVER_ADDR=${{ secrets.NACOS_SERVER_ADDR }} \
               -e NACOS_USERNAME=${{ secrets.NACOS_USERNAME }} \
               -e NACOS_PASSWORD=${{ secrets.NACOS_PASSWORD }} \
               -e NACOS_NAMESPACE="${{ vars.NACOS_NAMESPACE || '' }}" \
+              -e NACOS_GROUP=${{ vars.NACOS_GROUP || 'DEFAULT_GROUP' }} \
               tianyaqpzm/python-agent:${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'master' }}
             
             # 清理无用镜像

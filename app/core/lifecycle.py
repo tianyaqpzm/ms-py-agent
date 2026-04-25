@@ -7,7 +7,7 @@ from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
 from app.core.config import settings
 from app.core.nacos import nacos_manager
-from app.core.database import engine, init_db
+from app.core.database import get_engine, init_db
 from app.core.mcp_initialization import setup_mcp_clients, connect_clients
 
 logger = logging.getLogger(__name__)
@@ -114,6 +114,6 @@ async def lifespan(app: FastAPI):
         pass
 
     # 关闭数据库
-    await engine.dispose()  # 关闭 SQLAlchemy
+    await get_engine().dispose()  # 关闭 SQLAlchemy
     await app.state.lg_pool.close()  # 关闭 LangGraph Pool
     logger.info("✅ Database resources released.")
