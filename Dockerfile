@@ -11,10 +11,12 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV APP_PORT=8181
 
-# 安装系统依赖 (如果需要 pg_config 等，可能需要 install libpq-dev gcc)
-# psycopg[binary] 通常包含二进制，slim 镜像一般能直接用，如果报错再加
+# 安装系统依赖及 Node.js (使用最新 LTS 22.x 版本，支持 npx MCP 插件)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    gnupg \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # 安装 uv
