@@ -16,7 +16,7 @@ class Config:
 
     # Nacos Bootstrap (Must be provided via Env or launch.json)
     NACOS_SERVER_ADDR = os.getenv("NACOS_SERVER_ADDR", "127.0.0.1:8848")
-    NACOS_NAMESPACE = os.getenv("NACOS_NAMESPACE", "public")
+    NACOS_NAMESPACE = os.getenv("NACOS_NAMESPACE", "")
     NACOS_GROUP = os.getenv("NACOS_GROUP", "DEFAULT_GROUP")
     NACOS_USERNAME = os.getenv("NACOS_USERNAME", "")
     NACOS_PASSWORD = os.getenv("NACOS_PASSWORD", "")
