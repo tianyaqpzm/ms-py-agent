@@ -33,3 +33,5 @@ mvnw*
 .vscode/
 .DS_Store
 .env
+# nacos 缓存文件
+nacos-data/

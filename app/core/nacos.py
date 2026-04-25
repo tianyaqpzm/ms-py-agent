@@ -1,6 +1,7 @@
 import nacos
 import socket
 import logging
+import asyncio
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -109,9 +110,10 @@ class NacosManager:
         if not self.client:
             self.connect()
         try:
+            logger.debug(f"🔍 Fetching Nacos config: DataID={data_id}, Group={group}, Namespace={self.namespace}")
             return self.client.get_config(data_id, group)
         except Exception as e:
-            logger.error(f"Failed to get config {data_id}: {e}")
+            logger.error(f"❌ Failed to get config {data_id} from Group {group}: {e}")
             return None
 
     def add_config_watcher(self, data_id, group, cb):

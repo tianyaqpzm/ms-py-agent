@@ -5,66 +5,75 @@ from app.core.nacos import nacos_manager
 
 logger = logging.getLogger(__name__)
 
-
 class DynamicConfig:
     def __init__(self):
-        # Default to environment variables
-        self.llm_provider = settings.LLM_PROVIDER
-        self.llm_base_url = settings.LLM_BASE_URL
-        self.llm_model = settings.LLM_MODEL
-        self.llm_api_key = settings.LLM_API_KEY
-
-        # Nacos Config Info: Adopt Option 1 (Dynamic Data ID based on environment)
-        # e.g., python-agent-development.yaml or python-agent-production.yaml
-        self.data_id = f"{settings.SERVICE_NAME}-{settings.APP_ENV}.txt"
+        # 引导参数（必须通过环境变量获取，用于连接 Nacos）
+        self.data_id = f"{settings.SERVICE_NAME}-{settings.APP_ENV}.yaml"
         self.group = settings.NACOS_GROUP
 
     def watch_config(self):
-        """Start watching for configuration changes."""
-        logger.info(f"🎧 Starting to watch config: {self.data_id}")
+        """启动配置监听。"""
+        logger.info(f"🎧 Nacos Bootstrap: Targeting {self.data_id}")
 
-        # 1. Get initial config
         content = nacos_manager.get_config(self.data_id, self.group)
         if content:
             self._update_config(content)
+        else:
+            logger.error(f"❗ [Nacos] Failed to load {self.data_id}. Ensure Nacos is reachable.")
 
-        # 2. Add watcher
         nacos_manager.add_config_watcher(self.data_id, self.group, self._update_config)
 
+    def _flatten_dict(self, d, parent_key='', sep='_'):
+        items = []
+        for k, v in d.items():
+            new_key = f"{parent_key}{sep}{k}" if parent_key else k
+            if isinstance(v, dict):
+                items.extend(self._flatten_dict(v, new_key, sep=sep).items())
+            else:
+                items.append((new_key, v))
+        return dict(items)
+
     def _update_config(self, args):
-        """Callback for Nacos config updates."""
+        """获取嵌套 YAML，智能映射并同步。"""
         try:
-            # args can be the content string directly or a dictionary depending on SDK version
-            # Usually it's the content string in the callback
-            content = args
-            if isinstance(args, dict):
-                content = args.get("content", "")
+            content = args.get("content", "") if isinstance(args, dict) else args
+            if not content: return
 
-            if not content:
-                logger.warning("⚠️ Received empty config update from Nacos")
-                return
+            raw_config = yaml.safe_load(content)
+            if not isinstance(raw_config, dict): return
 
-            logger.info("🔄 Received config update from Nacos")
-            from io import StringIO
-            from dotenv import dotenv_values
+            flat_config = self._flatten_dict(raw_config)
+            
+            for key, value in flat_config.items():
+                key_upper = key.upper()
+                
+                # 智能匹配逻辑：
+                # 1. 直接匹配 (如 PG_HOST)
+                # 2. 去掉 APP_ 前缀匹配 (如 APP_SERVICE_NAME -> SERVICE_NAME)
+                target_key = None
+                if hasattr(settings, key_upper):
+                    target_key = key_upper
+                elif key_upper.startswith("APP_") and hasattr(settings, key_upper[4:]):
+                    target_key = key_upper[4:]
 
-            # 解析 .env 格式的内容 (KEY=VALUE)
-            config = dotenv_values(stream=StringIO(content))
-
-            if config:
-                # 直接从解析出的字典中读取配置 (通常建议与 .env/环境变量名保持一致)
-                self.llm_provider = config.get("LLM_PROVIDER", self.llm_provider)
-                self.llm_base_url = config.get("LLM_BASE_URL", self.llm_base_url)
-                self.llm_model = config.get("LLM_MODEL", self.llm_model)
-                self.llm_api_key = config.get("LLM_API_KEY", self.llm_api_key)
-
-                logger.info(
-                    f"✅ LLM Config Updated from .env: Provider={self.llm_provider}, Model={self.llm_model}, APIKey={'***' if self.llm_api_key != 'dummy' else 'dummy'}"
-                )
-
+                if target_key:
+                    self._apply_setting(target_key, value)
+            
+            logger.info("✅ Configuration synchronized and settings updated.")
         except Exception as e:
-            logger.error(f"❌ Error updating config: {e}")
+            logger.error(f"❌ YAML Processing Error: {e}")
 
+    def _apply_setting(self, key, value):
+        """将值应用到 settings，并处理数据类型。"""
+        old_val = getattr(settings, key)
+        try:
+            if isinstance(old_val, int): value = int(value)
+            elif isinstance(old_val, float): value = float(value)
+            elif isinstance(old_val, bool) and isinstance(value, str):
+                value = value.lower() in ("true", "1", "yes")
+        except: pass
+        setattr(settings, key, value)
+        # 同时更新 dynamic_config 实例本身以保持一致
+        setattr(self, key.lower(), value)
 
-# Singleton instance
 dynamic_config = DynamicConfig()

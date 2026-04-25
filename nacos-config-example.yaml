@@ -1,0 +1,43 @@
+# python-agent Nacos YAML 配置模版样例
+# Data ID: python-agent-development.yaml (或 python-agent-production.yaml)
+# Group: DEFAULT_GROUP
+# Format: YAML
+
+# 1. 全局应用属性 (对应代码中的 SERVICE_NAME, APP_ENV 等)
+APP:
+  SERVICE_NAME: python-agent
+  ENV: development
+
+# 2. 服务器启动配置
+SERVER:
+  HOST: 0.0.0.0
+  PORT: 8181
+
+# 3. Nacos 内部管理 (可选：可以在远程配置中修改日志打印频率)
+NACOS:
+  GATEWAY_SERVICE_NAME: gateway
+  LOG_INTERVAL: 60
+
+# 4. 大语言模型配置 (LLM)
+LLM:
+  PROVIDER: openai   # 可选: openai, deepseek, ollama, new-api
+  BASE_URL: https://api.openai.com/v1
+  MODEL: gpt-4o
+  API_KEY: sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  SKIP_SSL_VERIFY: true
+
+# 5. 数据库配置 (PostgreSQL)
+PG:
+  HOST: localhost
+  PORT: 5432
+  USER: postgres
+  PASSWORD: your_password
+  DB: agent_db
+
+# 6. 预留：知识库与向量检索配置
+KB:
+  EMBEDDING_PROVIDER: openai
+  EMBEDDING_MODEL: text-embedding-3-small
+  VECTOR_TABLE: langchain_pg_embedding
+  CHUNK_SIZE: 500
+  CHUNK_OVERLAP: 50
