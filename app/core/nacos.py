@@ -1,6 +1,7 @@
 import nacos
 import socket
 import logging
+import asyncio
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -75,7 +76,7 @@ class NacosManager:
                 self.ip,
                 self.port,
                 cluster_name="DEFAULT",
-                heartbeat_interval=10,
+                heartbeat_interval=settings.NACOS_HEARTBEAT_INTERVAL,
                 ephemeral=True,
             )
             logger.info(
@@ -105,6 +106,25 @@ class NacosManager:
             logger.error(f"Failed to get service {service_name}: {e}")
             return []
 
+    def get_config(self, data_id, group):
+        if not self.client:
+            self.connect()
+        try:
+            logger.debug(f"🔍 Fetching Nacos config: DataID={data_id}, Group={group}, Namespace={self.namespace}")
+            return self.client.get_config(data_id, group)
+        except Exception as e:
+            logger.error(f"❌ Failed to get config {data_id} from Group {group}: {e}")
+            return None
+
+    def add_config_watcher(self, data_id, group, cb):
+        if not self.client:
+            self.connect()
+        try:
+            self.client.add_config_watcher(data_id, group, cb)
+            logger.info(f"👀 Watching config: {data_id} (Group: {group})")
+        except Exception as e:
+            logger.error(f"Failed to add config watcher for {data_id}: {e}")
+
 
 # Singleton instance
 # 🔥 这里实例化现在是非常安全的，因为它只赋值变量，不发请求
@@ -114,5 +134,6 @@ nacos_manager = NacosManager(
     username=settings.NACOS_USERNAME,
     password=settings.NACOS_PASSWORD,
     service_name=settings.SERVICE_NAME,
+    ip=settings.SERVICE_IP,
     port=settings.PORT,
 )

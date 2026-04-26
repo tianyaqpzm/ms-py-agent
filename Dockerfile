@@ -11,17 +11,23 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV APP_PORT=8181
 
-# 安装系统依赖 (如果需要 pg_config 等，可能需要 install libpq-dev gcc)
-# psycopg[binary] 通常包含二进制，slim 镜像一般能直接用，如果报错再加
+# 安装系统依赖及 Node.js (使用最新 LTS 22.x 版本，支持 npx MCP 插件)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    gnupg \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# 复制依赖文件
-COPY requirements.txt .
+# 安装 uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# 复制依赖文件 (使用 uv 相关文件)
+COPY pyproject.toml uv.lock ./
 
 # 安装 Python 依赖
-RUN pip install --no-cache-dir -r requirements.txt
+# 使用 --system 安装到系统环境，因为是在容器内
+RUN uv pip install --system --no-cache -r pyproject.toml
 
 # 复制应用代码
 COPY . .

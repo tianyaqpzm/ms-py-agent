@@ -1,0 +1,38 @@
+[project]
+name = "python-agent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11.8"
+dependencies = [
+    "fastapi>=0.136.0",
+    "gradio>=6.13.0",
+    "httpx>=0.28.1",
+    "langchain>=1.2.15",
+    "langchain-community>=0.4.1",
+    "langchain-google-genai>=4.2.2",
+    "langchain-openai>=1.1.15",
+    "langchain-postgres>=0.0.17",
+    "langgraph>=1.1.8",
+    "langgraph-checkpoint-postgres>=3.0.5",
+    "mcp[sse]>=1.27.0",
+    "nacos-sdk-python==0.1.15",
+    "pdfminer-six>=20260107",
+    "psycopg-pool>=3.3.0",
+    "psycopg[binary]>=3.3.3",
+    "pyjwt>=2.12.1",
+    "python-dotenv>=1.2.2",
+    "python-multipart>=0.0.26",
+    "rank-bm25>=0.2.2",
+    "sqlalchemy>=2.0.49",
+    "sseclient-py>=1.9.0",
+    "uvicorn>=0.44.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-httpx>=0.30.0",
+]
+

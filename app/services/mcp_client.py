@@ -36,7 +36,7 @@ class SSEMCPClient(MCPClient):
         # Simplified for this task: specific implementation details might vary
         pass
 
-    async def list_tools(self):
+    async def list_tools(self, headers=None):
         # JSON-RPC request to list tools
         payload = {
             "jsonrpc": "2.0",
@@ -44,8 +44,8 @@ class SSEMCPClient(MCPClient):
             "method": "tools/list",
             "params": {}
         }
-        async with httpx.AsyncClient() as client:
-            response = await client.post(self.post_url, json=payload)
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(self.post_url, json=payload, headers=headers)
             response.raise_for_status()
             result = response.json()
             if 'result' in result:
@@ -53,7 +53,7 @@ class SSEMCPClient(MCPClient):
                 return self.tools
             return []
     
-    async def call_tool(self, tool_name, arguments):
+    async def call_tool(self, tool_name, arguments, headers=None):
         payload = {
             "jsonrpc": "2.0",
             "id": 2,
@@ -63,10 +63,56 @@ class SSEMCPClient(MCPClient):
                 "arguments": arguments
             }
         }
-        async with httpx.AsyncClient() as client:
-            response = await client.post(self.post_url, json=payload)
+        # Ensure URL is resolved if this is a Nacos client
+        if hasattr(self, "_resolve_url"):
+            await self._resolve_url()
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(self.post_url, json=payload, headers=headers)
             response.raise_for_status()
             return response.json().get('result', {})
+
+class NacosSSEMCPClient(SSEMCPClient):
+    def __init__(self, name, target_service_name):
+        """
+        MCP Client that discovers service address via Nacos.
+        :param target_service_name: The service name in Nacos (e.g., 'ai-langchain4j')
+        """
+        super().__init__(name, "http://uninitialized")
+        self.target_service_name = target_service_name
+
+    async def _resolve_url(self):
+        """Dynamically resolve service address from Nacos."""
+        from app.core.nacos import nacos_manager
+        try:
+            instances = nacos_manager.get_service(self.target_service_name)
+            if not instances:
+                logger.error(f"❌ No healthy instances found for {self.target_service_name} in Nacos.")
+                return False
+            
+            # Simple strategy: use the first instance
+            instance = instances[0]
+            ip = instance.get('ip')
+            port = instance.get('port')
+            
+            self.base_url = f"http://{ip}:{port}"
+            self.sse_url = f"{self.base_url}/mcp/sse"
+            # 💡 注意：Java 端 McpController 的消息处理路径通常是 /mcp/messages
+            self.post_url = f"{self.base_url}/mcp/messages"
+            return True
+        except Exception as e:
+            logger.error(f"❌ Failed to resolve {self.target_service_name} from Nacos: {e}")
+            return False
+
+    async def list_tools(self, headers=None):
+        if await self._resolve_url():
+            return await super().list_tools(headers=headers)
+        return []
+
+    async def call_tool(self, tool_name, arguments, headers=None):
+        if await self._resolve_url():
+            return await super().call_tool(tool_name, arguments, headers=headers)
+        return {"error": "Service unavailable"}
 
 class StdioMCPClient(MCPClient):
     def __init__(self, name, command, args):
@@ -76,6 +122,7 @@ class StdioMCPClient(MCPClient):
         self.process = None
         self._response_futures = {}
         self._lock = asyncio.Lock()
+        self._req_id = 0
 
     async def connect(self):
         full_command = [self.command] + self.args
@@ -94,7 +141,7 @@ class StdioMCPClient(MCPClient):
         
         # Initialize
         await self._send_json_rpc("initialize", {
-            "protocolVersion": "0.1.0",
+            "protocolVersion": "2024-11-05", # Matching latest spec
             "capabilities": {},
             "clientInfo": {"name": "python-agent", "version": "0.1"}
         })
@@ -102,10 +149,10 @@ class StdioMCPClient(MCPClient):
 
     async def _listen_stdout(self):
         while True:
-            line = await self.process.stdout.readline()
-            if not line:
-                break
             try:
+                line = await self.process.stdout.readline()
+                if not line:
+                    break
                 data = json.loads(line)
                 if 'id' in data and data['id'] in self._response_futures:
                     self._response_futures[data['id']].set_result(data)
@@ -113,22 +160,27 @@ class StdioMCPClient(MCPClient):
                 logger.error(f"Error parsing JSON from stdio: {e}")
 
     async def _send_json_rpc(self, method, params=None):
-        req_id = 1 # In real app, increment this
+        async with self._lock:
+            self._req_id += 1
+            current_id = self._req_id
+        
         future = asyncio.Future()
-        self._response_futures[req_id] = future
+        self._response_futures[current_id] = future
         
-        payload = {
-            "jsonrpc": "2.0",
-            "id": req_id,
-            "method": method,
-            "params": params or {}
-        }
-        json_str = json.dumps(payload) + "\n"
-        self.process.stdin.write(json_str.encode())
-        await self.process.stdin.drain()
-        
-        return await future
-
+        try:
+            payload = {
+                "jsonrpc": "2.0",
+                "id": current_id,
+                "method": method,
+                "params": params or {}
+            }
+            json_str = json.dumps(payload) + "\n"
+            self.process.stdin.write(json_str.encode())
+            await self.process.stdin.drain()
+            
+            return await future
+        finally:
+            self._response_futures.pop(current_id, None)
     async def list_tools(self):
         response = await self._send_json_rpc("tools/list")
         if response and 'result' in response:
