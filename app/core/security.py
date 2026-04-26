@@ -67,7 +67,6 @@ def get_current_user(
     当 Gateway 正常工作时，X-User-* Header 已经由 Gateway 注入，可直接使用。
     此处额外做 Token 本地校验，作为纵深防御（Gateway 被绕过时的最后一道防线）。
     """
-    return CurrentUser(id="1", name="test", avatar="")
     token = _extract_token(request, credentials)
 
     if token is None:
