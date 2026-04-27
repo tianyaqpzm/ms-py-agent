@@ -4,7 +4,7 @@ import glob
 import httpx
 import asyncio
 
-# The endpoint of your running Python Agent service
+# The endpoint of your running ms-py-agent service
 INGEST_URL = "http://localhost:8181/rest/kb/v1/documents/ingest"
 
 async def ingest_file(client: httpx.AsyncClient, file_path: str):

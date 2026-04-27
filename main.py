@@ -31,13 +31,23 @@ from app.api.routers import chat, kb
 
 # 3. 创建 FastAPI 应用
 app = FastAPI(
-    title="Python Agent Service",
+    title="ms-py-agent Service",
     lifespan=lifespan
 )
 
 # 注册路由
 app.include_router(chat.router, tags=["chat"])
 app.include_router(kb.router, prefix="/rest/kb/v1", tags=["Knowledge Base"])
+
+@app.middleware("http")
+async def log_requests(request, call_next):
+    logger.info(f"【Python请求】{request.method} {request.url.path}")
+    response = await call_next(request)
+    if response.status_code >= 400:
+        logger.error(f"【Python响应异常】{request.method} {request.url.path} -> {response.status_code}")
+    else:
+        logger.info(f"【Python响应完成】{request.method} {request.url.path} -> {response.status_code}")
+    return response
 
 @app.get("/health")
 async def health():

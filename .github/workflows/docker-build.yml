@@ -1,4 +1,4 @@
-name: Build Python Agent DockerImage
+name: Build MS Py Agent DockerImage
 
 on:
   push:
@@ -36,7 +36,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            tianyaqpzm/python-agent
+            tianyaqpzm/ms-py-agent
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -74,27 +74,28 @@ jobs:
           port: ${{ secrets.PORT || 22 }}
           script: |
             # 停止并删除旧容器
-            docker stop python-agent || true
-            docker rm python-agent || true
+            docker stop ms-py-agent || true
+            docker rm ms-py-agent || true
             
             # 拉取最新镜像
-            docker pull tianyaqpzm/python-agent:${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'master' }}
+            IMAGE_TAG=${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'master' }}
+            docker pull tianyaqpzm/ms-py-agent:${IMAGE_TAG}
             
             # 启动新容器
             docker run -d \
-              --name python-agent \
+              --name ms-py-agent \
               --restart unless-stopped \
               -p 8181:8181 \
               -e SERVICE_IP=${{ secrets.HOST }} \
               -e TZ=Asia/Shanghai \
               -e APP_ENV=production \
-              -e SERVICE_NAME=python-agent \
+              -e SERVICE_NAME=ms-py-agent \
               -e NACOS_SERVER_ADDR=${{ secrets.NACOS_SERVER_ADDR }} \
               -e NACOS_USERNAME=${{ secrets.NACOS_USERNAME }} \
               -e NACOS_PASSWORD=${{ secrets.NACOS_PASSWORD }} \
               -e NACOS_NAMESPACE="${{ vars.NACOS_NAMESPACE || '' }}" \
               -e NACOS_GROUP=${{ vars.NACOS_GROUP || 'DEFAULT_GROUP' }} \
-              tianyaqpzm/python-agent:${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'master' }}
+              tianyaqpzm/ms-py-agent:${IMAGE_TAG}
             
             # 清理无用镜像
-            docker image prune -f
+            docker image prune -af

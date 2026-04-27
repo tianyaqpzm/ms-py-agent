@@ -2,9 +2,18 @@ import nacos
 import socket
 import logging
 import asyncio
+import time
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+# 🔥 动态调整 Nacos SDK 默认超时时间
+try:
+    import nacos.client
+    nacos.client.DEFAULTS["TIMEOUT"] = settings.NACOS_TIMEOUT
+    logger.info(f"⚙️ Set Nacos default timeout to {settings.NACOS_TIMEOUT}s")
+except Exception as e:
+    logger.warning(f"⚠️ Failed to patch Nacos timeout: {e}")
 
 
 class NacosManager:
@@ -45,24 +54,34 @@ class NacosManager:
 
     def connect(self):
         """
-        🔥 新增方法：显式建立连接
-        只有在 main.py 的 lifespan 中调用此方法时，才会真正发起网络请求
+        🔥 显式建立连接，包含重试机制
         """
         if self.client:
-            return  # 已经连过了，直接返回
+            return
 
-        try:
-            logger.info(f"🔌 Connecting to Nacos at {self.server_addr}...")
-            self.client = nacos.NacosClient(
-                self.server_addr,
-                namespace=self.namespace,
-                username=self.username,
-                password=self.password,
-            )
-            logger.info("✅ Connected to Nacos successfully.")
-        except Exception as e:
-            logger.error(f"❌ Failed to connect to Nacos: {e}")
-            raise e  # 抛出异常，让外部的重试逻辑捕获
+        retries = settings.NACOS_RETRIES
+        delay = 2  # 初始重试延迟
+
+        for i in range(retries):
+            try:
+                logger.info(f"🔌 Connecting to Nacos at {self.server_addr} (Attempt {i+1}/{retries})...")
+                self.client = nacos.NacosClient(
+                    self.server_addr,
+                    namespace=self.namespace,
+                    username=self.username,
+                    password=self.password,
+                )
+                logger.info("✅ Connected to Nacos successfully.")
+                return
+            except Exception as e:
+                logger.warning(f"❌ Connection attempt {i+1} failed: {e}")
+                if i < retries - 1:
+                    logger.info(f"⏳ Retrying in {delay}s...")
+                    time.sleep(delay)
+                    delay *= 2  # 指数退避
+                else:
+                    logger.error("🚫 All Nacos connection attempts failed.")
+                    raise e
 
     def register_service(self):
         # 如果还没连接，先尝试连接

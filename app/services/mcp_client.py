@@ -76,7 +76,7 @@ class NacosSSEMCPClient(SSEMCPClient):
     def __init__(self, name, target_service_name):
         """
         MCP Client that discovers service address via Nacos.
-        :param target_service_name: The service name in Nacos (e.g., 'ai-langchain4j')
+        :param target_service_name: The service name in Nacos (e.g., 'ms-java-biz')
         """
         super().__init__(name, "http://uninitialized")
         self.target_service_name = target_service_name
@@ -143,7 +143,7 @@ class StdioMCPClient(MCPClient):
         await self._send_json_rpc("initialize", {
             "protocolVersion": "2024-11-05", # Matching latest spec
             "capabilities": {},
-            "clientInfo": {"name": "python-agent", "version": "0.1"}
+            "clientInfo": {"name": "ms-py-agent", "version": "0.1"}
         })
         await self._send_json_rpc("notifications/initialized")
 
