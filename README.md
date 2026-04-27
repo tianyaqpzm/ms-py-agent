@@ -1,5 +1,5 @@
 ---
-title: Python-Agent
+title: ms-py-agent
 emoji: 🤖
 colorFrom: blue
 colorTo: green
@@ -10,7 +10,7 @@ paused: true
 ---
 
 
-# Python Agent
+# MS Py Agent
 
 A modular Python-based AI agent service built with FastAPI, integrating **Nacos** for service discovery and **Model Context Protocol (MCP)** for extensible tool usage. This agent uses **LangGraph** to orchestrate agentic workflows.
 
@@ -34,7 +34,7 @@ A modular Python-based AI agent service built with FastAPI, integrating **Nacos*
 1. Clone the repository:
    ```bash
    git clone <repository_url>
-   cd python-agent
+   cd ms-py-agent
    ```
 
 2. Create and activate a virtual environment:
@@ -64,7 +64,7 @@ The application is configured via environment variables. You can create a `.env`
 | `NACOS_NAMESPACE` | `public` | Nacos namespace ID. |
 | `NACOS_USERNAME` | `` | Nacos username. |
 | `NACOS_PASSWORD` | `` | Nacos password. |
-| `SERVICE_NAME` | `python-agent` | Name of this service in Nacos. |
+| `SERVICE_NAME` | `ms-py-agent` | Name of this service in Nacos. |
 | `MCP_BRAVE_PATH` | (Auto-detected) | Optional override for `npx` path. |
 | `NACOS_GATEWAY_SERVICE_NAME` | `gateway` | Name of the Java/Gateway service to discover. |
 
@@ -99,7 +99,7 @@ uvicorn main:app --reload --port 8181
 The project follows a modular package structure:
 
 ```text
-python-agent/
+ms-py-agent/
 ├── app/
 │   ├── core/           # Core configuration & infrastructure (Nacos, Config)
 │   ├── services/       # External service clients (MCP)

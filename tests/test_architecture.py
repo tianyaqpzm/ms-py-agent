@@ -30,7 +30,7 @@ class TestArchitectureGuard:
         assert config.HOST is not None
         assert config.PORT is not None
         assert config.JWT_SECRET is not None
-        assert config.SERVICE_NAME == "python-agent"
+        assert config.SERVICE_NAME == "ms-py-agent"
         assert config.NACOS_GROUP == "DEFAULT_GROUP"
         assert isinstance(config.JWT_WHITELIST, list)
         assert len(config.JWT_WHITELIST) > 0

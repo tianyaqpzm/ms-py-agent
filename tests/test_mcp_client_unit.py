@@ -74,7 +74,7 @@ class TestNacosSSEMCPClient:
     # PC-03: _resolve_url 正确拼接
     @pytest.mark.asyncio
     async def test_resolve_url_builds_correct_base_url(self):
-        client = NacosSSEMCPClient("java-mcp", "ai-langchain4j")
+        client = NacosSSEMCPClient("java-mcp", "ms-java-biz")
 
         with patch("app.core.nacos.nacos_manager") as mock_nacos:
             mock_nacos.get_service.return_value = [

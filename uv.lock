@@ -2497,7 +2497,7 @@ wheels = [
 ]
 
 [[package]]
-name = "python-agent"
+name = "ms-py-agent"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

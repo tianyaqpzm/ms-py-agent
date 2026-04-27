@@ -34,7 +34,7 @@ def test_nacos():
             # 尝试获取一个配置来验证权限 (DataID 随意填一个可能存在的)
             print("  - Attempting to fetch config...")
             # 注意：如果 DataID 不存在通常返回 None 而不会报错。如果是 403 则是权限问题。
-            config = client.get_config("python-agent-development.yaml", "DEFAULT_GROUP")
+            config = client.get_config("ms-py-agent-development.yaml", "DEFAULT_GROUP")
             
             if config:
                 print(f"  ✅ SUCCESS! Received config (first 50 chars): {config[:50]}...")
@@ -43,7 +43,7 @@ def test_nacos():
                 
             # 尝试列出实例 (验证 Naming 权限)
             print("  - Attempting to list naming instances...")
-            instances = client.list_naming_instance("python-agent")
+            instances = client.list_naming_instance("ms-py-agent")
             print(f"  ✅ SUCCESS! Found {len(instances)} instances.")
 
         except Exception as e:

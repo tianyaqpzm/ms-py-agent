@@ -26,7 +26,7 @@ trigger: always_on
    - 使用 `AsyncPostgresSaver` 对 Agent 状态进行持久化 (Checkpointing)。
 
 3. **MCP Client 集成**:
-   - **禁止**硬编码 localhost。必须使用 `nacos-sdk-python` 动态获取 Java 服务的 IP 和端口。
+   - **禁止**硬编码 localhost。必须使用 `nacos-sdk-python` 动态获取 `ms-java-biz` 的 IP 和端口。
    - 实现完整的 MCP Client 生命周期：连接 -> 初始化 (Initialize) -> 获取工具列表 (List Tools) -> 调用工具 (Call Tool)。
    - 必须优雅地处理 SSE 断线重连逻辑。
 
@@ -35,4 +35,4 @@ trigger: always_on
    - 聊天接口必须使用 `StreamingResponse`，将 LLM/LangGraph 生成的 Token 实时流式转发给网关。
 
 # Key Context (关键背景)
-本服务是系统的“大脑” (Brain)。它接收来自网关的用户提问，在数据库中维护对话上下文 (Memory)，并在需要执行业务操作时，通过 MCP 协议调用 Java 后端。
+本服务 (`ms-py-agent`) 是智能编排层。它基于 LangGraph 编排 Agent 工作流对接 LLM 进行推理与规划，并在需要执行业务操作时，通过 MCP 协议动态调度 `ms-java-biz` 提供的工具。它同时在数据库中维护对话上下文 (Memory)。

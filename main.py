@@ -31,7 +31,7 @@ from app.api.routers import chat, kb
 
 # 3. 创建 FastAPI 应用
 app = FastAPI(
-    title="Python Agent Service",
+    title="ms-py-agent Service",
     lifespan=lifespan
 )
 

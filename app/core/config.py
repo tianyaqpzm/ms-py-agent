@@ -20,14 +20,14 @@ class Config:
     NACOS_GROUP = os.getenv("NACOS_GROUP", "DEFAULT_GROUP")
     NACOS_USERNAME = os.getenv("NACOS_USERNAME", "")
     NACOS_PASSWORD = os.getenv("NACOS_PASSWORD", "")
-    SERVICE_NAME = os.getenv("SERVICE_NAME", "python-agent")
+    SERVICE_NAME = os.getenv("SERVICE_NAME", "ms-py-agent")
     SERVICE_IP = os.getenv("SERVICE_IP")
     NACOS_HEARTBEAT_INTERVAL = int(os.getenv("NACOS_HEARTBEAT_INTERVAL", 30))
 
     # MCP / Discovery
     MCP_BRAVE_PATH = os.getenv("MCP_BRAVE_PATH")
-    NACOS_GATEWAY_SERVICE_NAME = os.getenv("NACOS_GATEWAY_SERVICE_NAME", "gateway")
-    NACOS_JAVA_SERVICE_NAME = os.getenv("NACOS_JAVA_SERVICE_NAME", "ai-langchain4j")
+    NACOS_GATEWAY_SERVICE_NAME = os.getenv("NACOS_GATEWAY_SERVICE_NAME", "ms-java-gateway")
+    NACOS_JAVA_SERVICE_NAME = os.getenv("NACOS_JAVA_SERVICE_NAME", "ms-java-biz")
 
     # Security
     JWT_SECRET = os.getenv("JWT_SECRET", "your-256-bit-secret-your-256-bit-secret")

@@ -1,11 +1,11 @@
 """
 JWT 身份校验依赖
 
-逻辑与 api-gateway JwtAuthenticationFilter 保持一致：
+逻辑与 ms-java-gateway JwtAuthenticationFilter 保持一致：
   1. 优先从 Cookie jwt_token 中读取 Token（浏览器场景）
   2. 兜底从 Authorization: Bearer <token> 中读取（API 调用场景）
   3. 白名单路径直接放行
-  4. 校验使用与 Gateway 相同的 HMAC-SHA256 secret
+  4. 校验使用与 ms-java-gateway 相同的 HMAC-SHA256 secret
 
 使用方式（在路由函数中注入）:
     from app.core.security import get_current_user, CurrentUser
@@ -43,7 +43,7 @@ def _extract_token(request: Request, credentials: HTTPAuthorizationCredentials |
     """
     按优先级提取 Token：
       1. Cookie jwt_token（浏览器场景，由 Gateway SSO 写入）
-      2. Authorization: Bearer <token>（API 客户端 / Python Agent 内部调用）
+      2. Authorization: Bearer <token>（API 客户端 / ms-py-agent 内部调用）
     """
     # 优先读 Cookie
     cookie_token = request.cookies.get("jwt_token")
@@ -77,7 +77,7 @@ def get_current_user(
         )
 
     try:
-        # 使用与 api-gateway 相同的 HMAC-SHA256 算法和 secret 解码
+        # 使用与 ms-java-gateway 相同的 HMAC-SHA256 算法和 secret 解码
         claims = jwt.decode(
             token,
             settings.JWT_SECRET,
