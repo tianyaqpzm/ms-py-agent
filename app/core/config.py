@@ -23,6 +23,8 @@ class Config:
     SERVICE_NAME = os.getenv("SERVICE_NAME", "ms-py-agent")
     SERVICE_IP = os.getenv("SERVICE_IP")
     NACOS_HEARTBEAT_INTERVAL = int(os.getenv("NACOS_HEARTBEAT_INTERVAL", 30))
+    NACOS_TIMEOUT = int(os.getenv("NACOS_TIMEOUT", 10))  # 默认增加到 10s
+    NACOS_RETRIES = int(os.getenv("NACOS_RETRIES", 5))    # 默认重试 5 次
 
     # MCP / Discovery
     MCP_BRAVE_PATH = os.getenv("MCP_BRAVE_PATH")
