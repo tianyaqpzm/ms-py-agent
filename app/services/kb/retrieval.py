@@ -80,7 +80,7 @@ class DefaultVectorProcessor(BaseRetrievalProcessor):
     async def _vector_search(self, query: str, filters: Dict[str, Any]) -> List[Document]:
         try:
             # 基础检索需要同时获取 Score（距离越小越好或越大越好）
-            results = await self.vectorstore.asimilarity_search_with_score(
+            results = await self.vector_store.asimilarity_search_with_score(
                 query=query,
                 k=self.top_k,
                 filter=filters

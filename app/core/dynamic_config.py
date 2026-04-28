@@ -1,4 +1,5 @@
 import logging
+from typing import Dict, List, Any
 import yaml
 from app.core.config import settings
 from app.core.nacos import nacos_manager
@@ -23,8 +24,8 @@ class DynamicConfig:
 
         nacos_manager.add_config_watcher(self.data_id, self.group, self._update_config)
 
-    def _flatten_dict(self, d, parent_key='', sep='_'):
-        items = []
+    def _flatten_dict(self, d: Dict[str, Any], parent_key: str = '', sep: str = '_') -> Dict[str, Any]:
+        items: List[tuple[str, Any]] = []
         for k, v in d.items():
             new_key = f"{parent_key}{sep}{k}" if parent_key else k
             if isinstance(v, dict):
@@ -33,7 +34,7 @@ class DynamicConfig:
                 items.append((new_key, v))
         return dict(items)
 
-    def _update_config(self, args):
+    def _update_config(self, args: Any) -> None:
         """获取嵌套 YAML，智能映射并同步。"""
         try:
             content = args.get("content", "") if isinstance(args, dict) else args
@@ -70,7 +71,7 @@ class DynamicConfig:
         except Exception as e:
             logger.error(f"❌ YAML Processing Error: {e}")
 
-    def _apply_setting(self, key, value):
+    def _apply_setting(self, key: str, value: Any) -> None:
         """将值应用到 settings，并处理数据类型。"""
         old_val = getattr(settings, key)
         try:
@@ -78,7 +79,10 @@ class DynamicConfig:
             elif isinstance(old_val, float): value = float(value)
             elif isinstance(old_val, bool) and isinstance(value, str):
                 value = value.lower() in ("true", "1", "yes")
-        except: pass
+        except (ValueError, TypeError) as e:
+            logger.debug(f"Failed to cast {key} value {value} to {type(old_val)}: {e}")
+            return
+
         setattr(settings, key, value)
         # 同时更新 dynamic_config 实例本身以保持一致
         setattr(self, key.lower(), value)

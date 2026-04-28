@@ -17,3 +17,17 @@ trigger: always_on
 ## 3. 值对象 (Value Object) 规范
 * 必须使用 @dataclass(frozen=True) 声明，保证其不可变性。尝试修改值对象的属性必须在运行时引发异常。
 * 对于金额、地址、坐标等概念，必须封装为值对象，严禁在领域实体中直接散落 latitude: float, longitude: float 这样的原生类型字段。
+
+## 4. 异常处理规范 (Error Handling)
+* **精准捕获**: 严禁使用空的 `try-except` 或模糊的 `except Exception:`。必须明确捕获预期的异常类型（如 `ValueError`, `KeyError`, `httpx.HTTPError`）。
+* **禁止静默失败**: 除非有明确的业务降级逻辑，否则严禁在 `except` 块中仅使用 `pass`。必须记录 `logger.error` 或 `logger.warning`。
+* **防御性编程**: 对 Nacos 配置下发等外部输入必须进行类型校验与转换异常处理。
+
+## 5. MCP 客户端开发规范
+* **类型安全**: 所有的 `MCPClient` 方法（如 `list_tools`, `call_tool`）必须包含完整的 Type Hints。
+* **URL 约定**: 远程 MCP 调用必须遵循 `/mcp/messages` 的标准消息处理路径。
+* **生命周期**: 必须实现完善的初始化与连接状态管理，对于 Stdio 模式需处理 JSON 解析异常。
+
+## 6. 配置管理规范
+* **声明式配置**: `app/core/config.py` 中的 `Config` 类成员必须全部标注类型。
+* **动态同步**: 在 `dynamic_config.py` 中执行类型转换时，必须对转换失败进行防御处理，避免配置注入导致应用崩溃。

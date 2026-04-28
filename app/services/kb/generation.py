@@ -132,7 +132,8 @@ class HowToCookGenerationProcessor(BaseGenerationProcessor):
         try:
             res = await chain.ainvoke(query)
             return res.strip()
-        except:
+        except Exception as e:
+            logger.warning(f"Failed to rewrite query: {e}")
             return query
 
     async def _route_intent(self, query: str) -> str:
@@ -148,10 +149,11 @@ class HowToCookGenerationProcessor(BaseGenerationProcessor):
         try:
             res = (await chain.ainvoke(query)).strip().lower()
             return res if res in ['list', 'detail', 'general'] else 'general'
-        except:
+        except Exception as e:
+            logger.warning(f"Failed to route intent: {e}")
             return 'general'
 
-    def _get_prompt_by_intent(self, intent: str, context: str, query: str):
+    def _get_prompt_by_intent(self, intent: str, context: str, query: str) -> ChatPromptTemplate:
         if intent == "list":
             return ChatPromptTemplate.from_template(
                 "你是一个主厨。用户的需求是对菜品列举。请看看下文资料提到的所有菜品名称并进行规整打分推荐。\n"
