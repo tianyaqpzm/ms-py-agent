@@ -34,5 +34,10 @@ trigger: always_on
    - 通过 FastAPI 暴露接口。
    - 聊天接口必须使用 `StreamingResponse`，将 LLM/LangGraph 生成的 Token 实时流式转发给网关。
 
+5. **领域层与类型安全 (Domain & Typing)**:
+   - **领域隔离**: 领域模型必须是纯 POJO (使用 `@dataclass`)，严禁继承 ORM 基类。参考 [CODING_STANDARDS.md](./CODING_STANDARDS.md)。
+   - **100% 类型覆盖**: 核心业务逻辑与方法签名必须包含完整的 Type Hints。
+   - **异常处理**: 严禁空捕获，必须精准捕获具体异常并记录有效日志。
+
 # Key Context (关键背景)
 本服务 (`ms-py-agent`) 是智能编排层。它基于 LangGraph 编排 Agent 工作流对接 LLM 进行推理与规划，并在需要执行业务操作时，通过 MCP 协议动态调度 `ms-java-biz` 提供的工具。它同时在数据库中维护对话上下文 (Memory)。

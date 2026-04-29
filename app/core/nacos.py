@@ -3,6 +3,7 @@ import socket
 import logging
 import asyncio
 import time
+from typing import Optional, Any
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -41,18 +42,18 @@ class NacosManager:
         # 3. 🔥 关键修改：初始化时 client 设为 None，不立即连接
         self.client = None
 
-    def _get_local_ip(self):
+    def _get_local_ip(self) -> str:
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.connect(("10.255.255.255", 1))
             IP = s.getsockname()[0]
-        except Exception:
+        except OSError:
             IP = "127.0.0.1"
         finally:
             s.close()
         return IP
 
-    def connect(self):
+    def connect(self) -> None:
         """
         🔥 显式建立连接，包含重试机制
         """
@@ -83,13 +84,12 @@ class NacosManager:
                     logger.error("🚫 All Nacos connection attempts failed.")
                     raise e
 
-    def register_service(self):
+    def register_service(self) -> None:
         # 如果还没连接，先尝试连接
         if not self.client:
             self.connect()
 
         try:
-            # 🔥 这里的配置保持你之前的修复逻辑不变
             self.client.add_naming_instance(
                 self.service_name,
                 self.ip,
@@ -103,9 +103,8 @@ class NacosManager:
             )
         except Exception as e:
             logger.error(f"❌ Failed to register service: {e}")
-            # 这里可以选择是否抛出异常，取决于你希望注册失败是否影响启动
 
-    def deregister_service(self):
+    def deregister_service(self) -> None:
         if not self.client:
             return
 
@@ -115,7 +114,7 @@ class NacosManager:
         except Exception as e:
             logger.error(f"Failed to deregister service: {e}")
 
-    def get_service(self, service_name):
+    def get_service(self, service_name: str) -> list[dict]:
         if not self.client:
             self.connect()
 
@@ -125,7 +124,7 @@ class NacosManager:
             logger.error(f"Failed to get service {service_name}: {e}")
             return []
 
-    def get_config(self, data_id, group):
+    def get_config(self, data_id: str, group: str) -> Optional[str]:
         if not self.client:
             self.connect()
         try:
@@ -135,7 +134,7 @@ class NacosManager:
             logger.error(f"❌ Failed to get config {data_id} from Group {group}: {e}")
             return None
 
-    def add_config_watcher(self, data_id, group, cb):
+    def add_config_watcher(self, data_id: str, group: str, cb: Any) -> None:
         if not self.client:
             self.connect()
         try:

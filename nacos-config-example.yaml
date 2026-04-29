@@ -15,7 +15,7 @@ SERVER:
 
 # 3. Nacos 内部管理与服务发现
 NACOS:
-  GATEWAY_SERVICE_NAME: gateway
+  GATEWAY_SERVICE_NAME: ms-java-gateway
   JAVA_SERVICE_NAME: ms-java-biz    # 💡 对应 Java 后端(Hands)在 Nacos 注册的名字
   LOG_INTERVAL: 60
 
@@ -42,3 +42,7 @@ KB:
   VECTOR_TABLE: langchain_pg_embedding
   CHUNK_SIZE: 500
   CHUNK_OVERLAP: 50
+
+# 7. 安全配置 (Security)
+JWT:
+  SECRET: ${JWT_SECRET:your-256-bit-secret-your-256-bit-secret} # 💡 必须与 ms-java-gateway 保持一致

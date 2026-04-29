@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+from typing import Set, Any
 from fastapi import FastAPI
 from psycopg_pool import AsyncConnectionPool
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
@@ -13,11 +14,11 @@ from app.core.mcp_initialization import setup_mcp_clients, connect_clients
 logger = logging.getLogger(__name__)
 
 # 定义一个全局集合，用来存放后台任务的引用，防止被 GC
-background_tasks = set()
+background_tasks: Set[asyncio.Task[Any]] = set()
 
 
 # 🔥 配置函数：禁用 Prepared Statements (解决 consuming input failed)
-async def configure_conn(conn):
+async def configure_conn(conn: Any) -> None:
     conn.prepare_threshold = None
 
 
@@ -110,8 +111,8 @@ async def lifespan(app: FastAPI):
     # 7. 资源清理
     try:
         nacos_manager.deregister_service()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"⚠️ Nacos deregister failed: {e}")
 
     # 关闭数据库
     await get_engine().dispose()  # 关闭 SQLAlchemy
