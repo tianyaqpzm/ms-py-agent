@@ -21,7 +21,8 @@ class BaseRetrievalProcessor(ABC):
         self.embeddings = LLMFactory.get_embeddings(
             provider=settings.KB_EMBEDDING_PROVIDER,
             model_name=settings.KB_EMBEDDING_MODEL,
-            base_url=settings.LLM_BASE_URL
+            base_url=settings.LLM_BASE_URL,
+            api_key=settings.LLM_API_KEY
         )
 
     async def search(self, query: str, filters: Dict[str, Any]) -> List[Dict[str, Any]]:
